@@ -1,6 +1,11 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	server "tcp-chat/internal/server"
+
+
+)
 
 
 
@@ -8,7 +13,7 @@ import "fmt"
 
 func main() {
 	
-	server, err := NewServer(":3000")
+	server, err := server.NewServer(":3000")
 	if err != nil {
 		panic(err)
 	}

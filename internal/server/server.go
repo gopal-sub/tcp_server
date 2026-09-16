@@ -1,9 +1,10 @@
-package main
+package server
 
 import (
 	"fmt"
 	"io"
 	"net"
+	"tcp-chat/internal/protocol"
 )
 
 
@@ -38,7 +39,9 @@ func (s *Server) Start() error{
 
 
 func HandleConnection(conn net.Conn){
+	feed := protocol.NewFramer()
 	defer conn.Close()
+	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
 	for{
 
@@ -51,7 +54,7 @@ func HandleConnection(conn net.Conn){
 			fmt.Println("client crashed");
 			return
 		}
-		fmt.Printf("Data recieved from client: %v", string(buffer[0:n]))
+		feed.Feed(buffer[:n])
 	}
 
 }
