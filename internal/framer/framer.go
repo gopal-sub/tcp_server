@@ -1,6 +1,9 @@
-package protocol
+package framer
 
-import "fmt"
+import (
+	"bytes"
+
+)
 
 
 type Framer struct {
@@ -18,16 +21,24 @@ func (f *Framer) Feed(data []byte)[]string{
 	// find every complete \n-terminated message, 
 	// return those messages, 
 	// and retain anything incomplete.
+	messages := []string{}
+
 
 	f.buffer = append(f.buffer, data...)
 
+	for {
+		breakPt := bytes.IndexByte(f.buffer, '|')
+		if breakPt == -1 {
+			break
+		}
+		messages = append(messages, string(f.buffer[:breakPt]))
 
-	for _, val := range f.buffer {
-		fmt.Println(val)
+		f.buffer = f.buffer[breakPt+1:]
+
+
 	}
 
-
-	return []string{"dkbabd"}
+	return messages
 }
 
 

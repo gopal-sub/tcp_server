@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"tcp-chat/internal/framer"
 	"tcp-chat/internal/protocol"
 )
 
@@ -39,7 +40,7 @@ func (s *Server) Start() error{
 
 
 func HandleConnection(conn net.Conn){
-	feed := protocol.NewFramer()
+	feed := framer.NewFramer()
 	defer conn.Close()
 	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
@@ -54,7 +55,25 @@ func HandleConnection(conn net.Conn){
 			fmt.Println("client crashed");
 			return
 		}
-		feed.Feed(buffer[:n])
+		messages := feed.Feed(buffer[:n])
+		for _, message := range messages{
+			command, err := protocol.Parser(message)
+			if err != nil{
+				conn.Write([]byte("invalid command"))
+			}
+			if command.Type == protocol.JOIN{
+				// add user to room
+			}else if command.Type == protocol.MESSAGE{
+				// send message
+			}else if command.Type == protocol.QUIT{
+				// remove the user
+			}
+
+		}
+		
+
+
+
 	}
 
 }
