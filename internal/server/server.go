@@ -6,12 +6,15 @@ import (
 	"net"
 	"tcp-chat/internal/framer"
 	"tcp-chat/internal/protocol"
+	"tcp-chat/internal/client"
+	"tcp-chat/internal/room"
 )
 
 
 type Server struct{
 	address string
 	listner net.Listener
+	rooms []*room.Room
 }
 
 func NewServer(address string) (*Server, error){
@@ -33,17 +36,18 @@ func (s *Server) Start() error{
 			return err
 		}
 		// https://www.youtube.com/watch?v=f6kdp27TYZs
-		go HandleConnection(conn)
+		go s.HandleConnection(conn)
 
 	}
 }
 
 
-func HandleConnection(conn net.Conn){
+func (s *Server) HandleConnection(conn net.Conn){
 	feed := framer.NewFramer()
 	defer conn.Close()
 	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
+	client := client.CreateClent(conn)
 	for{
 
 		n, err := conn.Read(buffer)
@@ -61,13 +65,23 @@ func HandleConnection(conn net.Conn){
 			if err != nil{
 				conn.Write([]byte("invalid command"))
 			}
-			if command.Type == protocol.JOIN{
-				// add user to room
-			}else if command.Type == protocol.MESSAGE{
-				// send message
-			}else if command.Type == protocol.QUIT{
-				// remove the user
+			switch command.Type{
+				case protocol.JOIN:
+					// add user to room
+					_ , exists := s.GetRoom(command.Arg)
+					if !exists{
+						// create the room
+						room := room.CreateRoom(command.Arg)
+						room.AddClientToRoom(client)
+					}else {
+						// add the client to the room
+					}
+				case protocol.MESSAGE:
+
+				case protocol.QUIT:
+				
 			}
+
 
 		}
 		
@@ -76,4 +90,15 @@ func HandleConnection(conn net.Conn){
 
 	}
 
+}
+
+func (s *Server) GetRoom(room string) {
+	for _, val := range s.rooms{
+		if val.Name == room{
+			
+		} 
+
+	}
+	return val, exists
+	
 }
