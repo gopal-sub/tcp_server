@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"sync"
 	"tcp-chat/internal/client"
 	"tcp-chat/internal/framer"
 	"tcp-chat/internal/protocol"
@@ -15,6 +16,7 @@ type Server struct{
 	address string
 	listner net.Listener
 	rooms []*room.Room
+	mu sync.Mutex
 }
 
 func NewServer(address string) (*Server, error){
@@ -53,10 +55,12 @@ func (s *Server) HandleConnection(conn net.Conn){
 		n, err := conn.Read(buffer)
 		if err == io.EOF{
 			fmt.Println("client disconnected");
+			s.RemoveClientFromAllRooms(client)
 			return
 		}
 		if err != nil {
-			fmt.Println("client crashed");
+			fmt.Println("connection error:", err)
+			s.RemoveClientFromAllRooms(client)
 			return
 		}
 		messages := feed.Feed(buffer[:n])
@@ -103,16 +107,18 @@ func (s *Server) HandleConnection(conn net.Conn){
 					
 				case protocol.MESSAGE:
 					roomsClientExistsIn := s.RoomsClientExistsIn(client)
+					if len(roomsClientExistsIn) ==0 {
+						client.SendMessage("You are not in any room")
+						break
+					}
+
 					for _,room := range roomsClientExistsIn{
 						room.BroadcastMessageExceptClient(client, command.Arg)
 					}
 					
 
 				case protocol.QUIT:
-					roomsClientExistsIn := s.RoomsClientExistsIn(client)
-					for _, room_val := range roomsClientExistsIn {
-						room_val.RemoveClientFromRoom(client)
-					}
+					s.RemoveClientFromAllRooms(client)
 
 				
 			}
@@ -128,6 +134,9 @@ func (s *Server) HandleConnection(conn net.Conn){
 }
 
 func (s *Server) GetRoom(room string) *room.Room{
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	for _, val := range s.rooms{
 		if val.Name == room{
 			return val;
@@ -139,10 +148,17 @@ func (s *Server) GetRoom(room string) *room.Room{
 }
 
 func (s *Server) AddRoomToServer(room *room.Room){
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.rooms = append(s.rooms, room)
 }
 
 func (s *Server) RoomsClientExistsIn(client *client.Client)[]*room.Room{
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+
 	roomsClientExistsIn := []*room.Room{}
 	for _ ,room := range s.rooms{
 		if room.DoesClientExistInRoom(client){
@@ -151,4 +167,15 @@ func (s *Server) RoomsClientExistsIn(client *client.Client)[]*room.Room{
 		
 	}
 	return roomsClientExistsIn
+}
+
+func (s *Server) RemoveClientFromAllRooms(client *client.Client) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+
+	roomsClientExistsIn := s.RoomsClientExistsIn(client)
+	for _, room_val := range roomsClientExistsIn {
+		room_val.RemoveClientFromRoom(client)
+	}
 }
