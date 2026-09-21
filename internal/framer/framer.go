@@ -2,6 +2,7 @@ package framer
 
 import (
 	"bytes"
+	"strings"
 
 )
 
@@ -31,7 +32,8 @@ func (f *Framer) Feed(data []byte)[]string{
 		if breakPt == -1 {
 			break
 		}
-		messages = append(messages, string(f.buffer[:breakPt]))
+		message := strings.TrimSpace(string(f.buffer[:breakPt]))
+		messages = append(messages, message)
 
 		f.buffer = f.buffer[breakPt+1:]
 

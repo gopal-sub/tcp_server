@@ -6,19 +6,24 @@ import (
 
 
 type Client struct {
-	conn net.Conn
-	room string
+	Conn net.Conn
+	Room string
 }
 
 
 func CreateClent(conn net.Conn) *Client{
 	return &Client{
-		conn: conn,
+		Conn: conn,
 	}
 }
 
 
 func (c *Client) ChangeRoomForClient(room string) {
-	c.room = room
+	c.Room = room
+}
+
+
+func (c *Client) SendMessage(msg string) {
+	c.Conn.Write([]byte(msg + "\n"))
 }
 
