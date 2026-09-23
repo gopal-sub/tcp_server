@@ -19,6 +19,19 @@ func CreateRoom(name string)*Room{
 	}
 }
 
+func (r *Room) GetAllClientsFromRoom()[]*client.Client{
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	clients := []*client.Client{}
+
+	for client := range r.Clients{
+		clients = append(clients, client)
+	}
+
+	return clients
+}
+
 
 func (r *Room) AddClientToRoom(client *client.Client){
 	r.mu.Lock()
@@ -30,11 +43,14 @@ func (r *Room) AddClientToRoom(client *client.Client){
 func (r *Room) RemoveClientFromRoom(client *client.Client){
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 	delete(r.Clients, client)
 }
+
 func (r *Room) DoesClientExistInRoom(client *client.Client)bool{
 	r.mu.Lock()
 	defer r.mu.Unlock()
+
 
 	_, exists := r.Clients[client]
 	if exists {
@@ -42,21 +58,23 @@ func (r *Room) DoesClientExistInRoom(client *client.Client)bool{
 	}
 	return  false
 }
+//message to clients to room
+//do not add locks here
 
 func (r *Room) BroadcastMessage(msg string){
-	r.mu.Lock()
-	defer r.mu.Unlock()
 
-	for client := range r.Clients{
+	clients :=r.GetAllClientsFromRoom()
+
+	for _ ,client := range clients{
 		client.SendMessage(msg)
 	}
 }
 
 func (r *Room) BroadcastMessageExceptClient(notclient *client.Client, msg string){
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	clients := r.GetAllClientsFromRoom()
 
-	for client := range r.Clients{
+	
+	for _ ,client := range clients{
 		if client != notclient {
 			client.SendMessage(msg)
 		}

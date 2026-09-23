@@ -13,6 +13,8 @@ const (
 	JOIN CommandType = "JOIN"
 	MESSAGE CommandType = "MESSAGE"
 	QUIT CommandType = "QUIT"
+	PING CommandType = "PING" // this is for the timout imp
+	PONG CommandType = "PONG"
 )
 
 type Command struct {
@@ -30,14 +32,17 @@ func Parser(message string) (*Command, error){
 	
 
 	//accept message as A B where A = string and B = string
-	// quit is just A
+	// B can be = ""
 	if firstSpace == -1{
 		//single string with no space
 		command.Type = CommandType(message)
-		return command, nil
+		
+	}else{
+		command.Type = CommandType(message[:firstSpace])
+		command.Arg = message[firstSpace+1:]
 	}
-	command.Type = CommandType(message[:firstSpace])
-	command.Arg = message[firstSpace+1:]
+
+
 
 	validCommand := false
 
@@ -54,6 +59,7 @@ func Parser(message string) (*Command, error){
 	if validCommand{
 		return command, nil
 	}
+
 
 	return command, InvalidCommand
 }

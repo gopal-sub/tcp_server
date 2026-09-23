@@ -64,6 +64,8 @@ func (s *Server) HandleConnection(conn net.Conn){
 			return
 		}
 		messages := feed.Feed(buffer[:n])
+		fmt.Println("message")
+		fmt.Println(messages)
 		for _, message := range messages{
 			command, err := protocol.Parser(message)
 			if err != nil{
@@ -118,6 +120,7 @@ func (s *Server) HandleConnection(conn net.Conn){
 					
 
 				case protocol.QUIT:
+					fmt.Println("\nits a quit\n")
 					s.RemoveClientFromAllRooms(client)
 
 				
@@ -133,49 +136,3 @@ func (s *Server) HandleConnection(conn net.Conn){
 
 }
 
-func (s *Server) GetRoom(room string) *room.Room{
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for _, val := range s.rooms{
-		if val.Name == room{
-			return val;
-		}
-
-	}
-	return nil
-	
-}
-
-func (s *Server) AddRoomToServer(room *room.Room){
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.rooms = append(s.rooms, room)
-}
-
-func (s *Server) RoomsClientExistsIn(client *client.Client)[]*room.Room{
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-
-	roomsClientExistsIn := []*room.Room{}
-	for _ ,room := range s.rooms{
-		if room.DoesClientExistInRoom(client){
-			roomsClientExistsIn = append(roomsClientExistsIn, room)
-		}
-		
-	}
-	return roomsClientExistsIn
-}
-
-func (s *Server) RemoveClientFromAllRooms(client *client.Client) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-
-	roomsClientExistsIn := s.RoomsClientExistsIn(client)
-	for _, room_val := range roomsClientExistsIn {
-		room_val.RemoveClientFromRoom(client)
-	}
-}
