@@ -71,7 +71,7 @@ func (r *Room) BroadcastMessage(msg string){
 }
 
 func (r *Room) BroadcastMessageExceptClient(notclient *client.Client, msg string){
-	clients := r.GetAllClientsFromRoom()
+	clients :=r.GetAllClientsFromRoom()
 
 	
 	for _ ,client := range clients{

@@ -16,6 +16,7 @@ type Server struct{
 	address string
 	listner net.Listener
 	rooms []*room.Room
+	Client map[*client.Client]struct{} //global list of all clients and client can exist with out being in a room
 	mu sync.Mutex
 }
 
@@ -50,6 +51,8 @@ func (s *Server) HandleConnection(conn net.Conn){
 	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
 	client := client.CreateClent(conn)
+	s.AddToGlobalClientList(client)
+
 	for{
 
 		n, err := conn.Read(buffer)
@@ -120,7 +123,6 @@ func (s *Server) HandleConnection(conn net.Conn){
 					
 
 				case protocol.QUIT:
-					fmt.Println("\nits a quit\n")
 					s.RemoveClientFromAllRooms(client)
 
 				

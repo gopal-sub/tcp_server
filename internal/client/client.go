@@ -2,26 +2,23 @@ package client
 
 import (
 	"net"
+	"time"
 )
 
 
 type Client struct {
 	Conn net.Conn
-	Room string
+	LastActivity time.Time
+	
 }
 
 
 func CreateClent(conn net.Conn) *Client{
 	return &Client{
 		Conn: conn,
+		LastActivity: time.Now(),
 	}
 }
-
-
-func (c *Client) ChangeRoomForClient(room string) {
-	c.Room = room
-}
-
 
 func (c *Client) SendMessage(msg string) {
 	c.Conn.Write([]byte(msg + "\n"))
