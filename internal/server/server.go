@@ -32,6 +32,8 @@ func NewServer(address string) (*Server, error){
 
 
 func (s *Server) Start() error{
+	s.CreateGlobalClientList()
+	go s.TimeoutChecker()
 	
 	for {
 		conn, err := s.listner.Accept()
@@ -40,6 +42,7 @@ func (s *Server) Start() error{
 		}
 		// https://www.youtube.com/watch?v=f6kdp27TYZs
 		go s.HandleConnection(conn)
+		
 
 	}
 }
@@ -59,6 +62,9 @@ func (s *Server) HandleConnection(conn net.Conn){
 		if err == io.EOF{
 			fmt.Println("client disconnected");
 			s.RemoveClientFromAllRooms(client)
+			return
+		}
+		if client.CloseByServer{
 			return
 		}
 		if err != nil {
