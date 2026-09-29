@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"tcp-chat/internal/framer"
 	"tcp-chat/internal/protocol"
 	"tcp-chat/internal/room"
+	"time"
 )
 
 
@@ -36,8 +38,17 @@ func (s *Server) Start() error{
 	go s.TimeoutChecker()
 	
 	for {
+		// go s.TestClose()
 		conn, err := s.listner.Accept()
 		if err != nil{
+			if errors.Is(err, net.ErrClosed){
+				return nil
+			}
+			// netErr.Temporary() is depricated
+			// if netErr, ok := err.(net.Error); ok && netErr.Temporary(){
+			// 	time.Sleep(10 * time.Millisecond)
+			// 	continue
+			// }
 			return err
 		}
 		// https://www.youtube.com/watch?v=f6kdp27TYZs
@@ -45,6 +56,10 @@ func (s *Server) Start() error{
 		
 
 	}
+}
+func (s *Server)TestClose(){
+	time.Sleep(5*time.Second)
+	s.listner.Close()
 }
 
 
@@ -73,8 +88,6 @@ func (s *Server) HandleConnection(conn net.Conn){
 			return
 		}
 		messages := feed.Feed(buffer[:n])
-		fmt.Println("message")
-		fmt.Println(messages)
 		for _, message := range messages{
 			command, err := protocol.Parser(message)
 			if err != nil{

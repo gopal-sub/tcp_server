@@ -1,6 +1,7 @@
 package client
 
 import (
+	"errors"
 	"net"
 	"time"
 )
@@ -23,7 +24,26 @@ func CreateClent(conn net.Conn) *Client{
 }
 
 func (c *Client) SendMessage(msg string) {
-	c.Conn.Write([]byte(msg + "\n"))
+	msgBytes := []byte(msg + "\n")
+	n, err := c.Conn.Write(msgBytes)
+	if errors.Is(err, net.ErrClosed){
+		return
+	}
+	if err != nil {
+		msgBytes = msgBytes[n:]
+		for range 3 {
+			
+			n, err := c.Conn.Write(msgBytes)
+			if err == nil{
+				break
+			}
+			msgBytes = msgBytes[n:]
+		
+		}
+
+	}
+
+	
 }
 
 func (c *Client) CloseClientByServer(){

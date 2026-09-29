@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	server "tcp-chat/internal/server"
+	"tcp-chat/internal/server"
 
 
 )
