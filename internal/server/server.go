@@ -20,6 +20,7 @@ type Server struct{
 	rooms []*room.Room
 	Client map[*client.Client]struct{} //global list of all clients and client can exist with out being in a room
 	mu sync.Mutex
+	Waitgrp sync.WaitGroup
 }
 
 func NewServer(address string) (*Server, error){
@@ -32,17 +33,18 @@ func NewServer(address string) (*Server, error){
 	return &Server{address: address, listner: listener}, nil
 }
 
-
 func (s *Server) Start() error{
 	s.CreateGlobalClientList()
 	go s.TimeoutChecker()
+	// test graceful shutdown
+	// go s.Shutdown()
 	
 	for {
 		// go s.TestClose()
 		conn, err := s.listner.Accept()
 		if err != nil{
 			if errors.Is(err, net.ErrClosed){
-				return nil
+				return ServerShutdown
 			}
 			// netErr.Temporary() is depricated
 			// if netErr, ok := err.(net.Error); ok && netErr.Temporary(){
@@ -57,18 +59,30 @@ func (s *Server) Start() error{
 
 	}
 }
-func (s *Server)TestClose(){
-	time.Sleep(5*time.Second)
+func (s *Server)Shutdown(){
+	s.Waitgrp.Add(1)
+	time.Sleep(10*time.Second)
+	
 	s.listner.Close()
+	fmt.Println("shutting down server")
+	for c := range s.Client{
+		s.RemoveClientByServer(c)
+	}
+
 }
 
 
 func (s *Server) HandleConnection(conn net.Conn){
+	// for graceful removal of client
+	s.Waitgrp.Add(1)
+	defer s.Waitgrp.Done()
+
 	feed := framer.NewFramer()
 	defer conn.Close()
+	defer s.Waitgrp.Done()
 	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
-	client := client.CreateClent(conn)
+	client := client.CreateClient(conn)
 	s.AddToGlobalClientList(client)
 
 	for{

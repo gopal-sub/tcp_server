@@ -15,7 +15,7 @@ type Client struct {
 }
 
 
-func CreateClent(conn net.Conn) *Client{
+func CreateClient(conn net.Conn) *Client{
 	return &Client{
 		Conn: conn,
 		LastActivity: time.Now(),
