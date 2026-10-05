@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -9,6 +10,7 @@ import (
 	"tcp-chat/internal/framer"
 	"tcp-chat/internal/protocol"
 	"tcp-chat/internal/room"
+	"time"
 )
 
 
@@ -18,6 +20,7 @@ type Server struct{
 	rooms []*room.Room
 	Client map[*client.Client]struct{} //global list of all clients and client can exist with out being in a room
 	mu sync.Mutex
+	Waitgrp sync.WaitGroup
 }
 
 func NewServer(address string) (*Server, error){
@@ -30,14 +33,24 @@ func NewServer(address string) (*Server, error){
 	return &Server{address: address, listner: listener}, nil
 }
 
-
 func (s *Server) Start() error{
 	s.CreateGlobalClientList()
 	go s.TimeoutChecker()
+	// test graceful shutdown
+	// go s.Shutdown()
 	
 	for {
+		// go s.TestClose()
 		conn, err := s.listner.Accept()
 		if err != nil{
+			if errors.Is(err, net.ErrClosed){
+				return ServerShutdown
+			}
+			// netErr.Temporary() is depricated
+			// if netErr, ok := err.(net.Error); ok && netErr.Temporary(){
+			// 	time.Sleep(10 * time.Millisecond)
+			// 	continue
+			// }
 			return err
 		}
 		// https://www.youtube.com/watch?v=f6kdp27TYZs
@@ -46,14 +59,30 @@ func (s *Server) Start() error{
 
 	}
 }
+func (s *Server)Shutdown(){
+	s.Waitgrp.Add(1)
+	time.Sleep(10*time.Second)
+	
+	s.listner.Close()
+	fmt.Println("shutting down server")
+	for c := range s.Client{
+		s.RemoveClientByServer(c)
+	}
+
+}
 
 
 func (s *Server) HandleConnection(conn net.Conn){
+	// for graceful removal of client
+	s.Waitgrp.Add(1)
+	defer s.Waitgrp.Done()
+
 	feed := framer.NewFramer()
 	defer conn.Close()
+	defer s.Waitgrp.Done()
 	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
-	client := client.CreateClent(conn)
+	client := client.CreateClient(conn)
 	s.AddToGlobalClientList(client)
 
 	for{
@@ -73,8 +102,6 @@ func (s *Server) HandleConnection(conn net.Conn){
 			return
 		}
 		messages := feed.Feed(buffer[:n])
-		fmt.Println("message")
-		fmt.Println(messages)
 		for _, message := range messages{
 			command, err := protocol.Parser(message)
 			if err != nil{

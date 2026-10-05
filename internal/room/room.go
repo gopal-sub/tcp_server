@@ -9,7 +9,7 @@ import (
 type Room struct {
 	Name string
 	Clients map[*client.Client]struct{}
-	mu sync.Mutex
+	MU sync.Mutex
 }
 
 func CreateRoom(name string)*Room{
@@ -20,8 +20,8 @@ func CreateRoom(name string)*Room{
 }
 
 func (r *Room) GetAllClientsFromRoom()[]*client.Client{
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.MU.Lock()
+	defer r.MU.Unlock()
 
 	clients := []*client.Client{}
 
@@ -34,22 +34,22 @@ func (r *Room) GetAllClientsFromRoom()[]*client.Client{
 
 
 func (r *Room) AddClientToRoom(client *client.Client){
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.MU.Lock()
+	defer r.MU.Unlock()
 
 	r.Clients[client] = struct{}{}
 }
 
 func (r *Room) RemoveClientFromRoom(client *client.Client){
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.MU.Lock()
+	defer r.MU.Unlock()
 
 	delete(r.Clients, client)
 }
 
 func (r *Room) DoesClientExistInRoom(client *client.Client)bool{
-	r.mu.Lock()
-	defer r.mu.Unlock()
+	r.MU.Lock()
+	defer r.MU.Unlock()
 
 
 	_, exists := r.Clients[client]

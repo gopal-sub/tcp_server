@@ -11,18 +11,20 @@ func (s *Server)CreateGlobalClientList(){
 	s.Client = make(map[*client.Client]struct{})
 }
 func (s *Server)AddToGlobalClientList(client *client.Client){
-	
+	s.mu.Lock()
+
+	defer s.mu.Unlock()
 	s.Client[client] = struct{}{}
 }
 
-func (s *Server)RemoveClientTimeout(client *client.Client){
-	
+func (s *Server)RemoveClientByServer(client *client.Client){
 	
 	s.RemoveClientFromAllRooms(client)
 	delete(s.Client, client)
 	client.CloseClientByServer()
 	client.Conn.Close()
 }
+
 
 func (s *Server) TimeoutChecker(){
 	freq := 10 * time.Second
@@ -34,7 +36,7 @@ func (s *Server) TimeoutChecker(){
 		for c, _ := range s.Client{
 			if time.Since(c.LastActivity) > freq {
 				fmt.Println("client removed")
-				s.RemoveClientTimeout(c)
+				s.RemoveClientByServer(c)
 			}
 		}
 	}

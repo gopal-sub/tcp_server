@@ -1,10 +1,9 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-	server "tcp-chat/internal/server"
-
-
+	"tcp-chat/internal/server"
 )
 
 
@@ -13,13 +12,18 @@ import (
 
 func main() {
 	
-	server, err := server.NewServer(":3000")
+	svr, err := server.NewServer(":3000")
 	if err != nil {
 		panic(err)
 	}
 	fmt.Println("server started")
-	err = server.Start()
+	err = svr.Start()
 
+	if errors.Is(err, server.ServerShutdown){
+		svr.Waitgrp.Wait()
+		fmt.Println("shutdown complete")
+		return
+	}
 	
 	if err != nil {
 		fmt.Println("client connection error")
