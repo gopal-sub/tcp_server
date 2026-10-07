@@ -1,6 +1,4 @@
-FROM golang:1.27
-
-
+FROM golang:1.27 AS build
 
 WORKDIR /tcp-chat
 
@@ -12,7 +10,17 @@ RUN go mod download
 
 COPY . .
 
-RUN go build -o ./bin/main ./cmd
+# create a static build CGO_ENABLED=0
+
+RUN CGO_ENABLED=0 go build -o ./bin/main ./cmd
+
+
+FROM alpine:3.24 
+
+WORKDIR /tcp-chat
+
+
+COPY --from=build ./tcp-chat/bin/main ./bin/main
 
 
 EXPOSE 3000

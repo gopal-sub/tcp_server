@@ -1,0 +1,25 @@
+name: Create and publish docker image
+
+
+# Run this job either direct on push on main or PR on main
+on:
+  push:
+    branches:
+      - main
+
+  pull_request:
+    branches:
+      - main
+
+
+jobs:
+  CreateDockerImage:
+    name: Create Docker image
+    runs-on: ubuntu-latest
+  
+    steps:
+    - name: Check out the repo
+      uses: actions/checkout@v6
+
+    
+

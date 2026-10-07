@@ -11,6 +11,7 @@ type Client struct {
 	Conn net.Conn
 	LastActivity time.Time
 	CloseByServer bool
+	SentPing bool
 	
 }
 
@@ -46,6 +47,7 @@ func (c *Client) SendMessage(msg string) {
 	
 }
 
+
 func (c *Client) CloseClientByServer(){
 	// c.MU.Lock()
 	// defer c.MU.Unlock()
@@ -53,4 +55,8 @@ func (c *Client) CloseClientByServer(){
 	c.CloseByServer = true
 }
 
+
+func (c *Client) UpdateLastActivity(){
+	c.LastActivity = time.Now()
+}
 

@@ -34,8 +34,11 @@ func NewServer(address string) (*Server, error){
 }
 
 func (s *Server) Start() error{
+	TimeoutFrequency := 30*time.Second
+
 	s.CreateGlobalClientList()
-	go s.TimeoutChecker()
+	go s.TimeoutChecker(TimeoutFrequency)
+	go s.PingClients(TimeoutFrequency)
 	// test graceful shutdown
 	// go s.Shutdown()
 	
@@ -79,7 +82,6 @@ func (s *Server) HandleConnection(conn net.Conn){
 
 	feed := framer.NewFramer()
 	defer conn.Close()
-	defer s.Waitgrp.Done()
 	// client_id := conn.RemoteAddr()
 	buffer := make([]byte, 1024)
 	client := client.CreateClient(conn)
@@ -108,6 +110,8 @@ func (s *Server) HandleConnection(conn net.Conn){
 				conn.Write([]byte("invalid command\n"))
 				continue
 			}
+			
+
 			switch command.Type{
 				case protocol.JOIN:
 					
@@ -157,6 +161,16 @@ func (s *Server) HandleConnection(conn net.Conn){
 
 				case protocol.QUIT:
 					s.RemoveClientFromAllRooms(client)
+
+				case protocol.PONG:
+					if client.SentPing {
+						client.UpdateLastActivity()
+						client.SentPing = false
+					}
+
+
+
+
 
 				
 			}

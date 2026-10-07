@@ -54,6 +54,8 @@ func Parser(message string) (*Command, error){
 		validCommand = true
 	}else if command.Type == MESSAGE{
 		validCommand = true
+	}else if command.Type == PONG{
+		validCommand = true
 	}
 	
 	if validCommand{
