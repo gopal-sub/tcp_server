@@ -10,7 +10,7 @@ import (
 type Client struct {
 	Conn net.Conn
 	LastActivity time.Time
-	CloseByServer bool
+	Active bool
 	SentPing bool
 	
 }
@@ -20,7 +20,7 @@ func CreateClient(conn net.Conn) *Client{
 	return &Client{
 		Conn: conn,
 		LastActivity: time.Now(),
-		CloseByServer: false,
+		Active: true,
 	}
 }
 
@@ -48,11 +48,11 @@ func (c *Client) SendMessage(msg string) {
 }
 
 
-func (c *Client) CloseClientByServer(){
+func (c *Client) DeactivateClient(){
 	// c.MU.Lock()
 	// defer c.MU.Unlock()
 	
-	c.CloseByServer = true
+	c.Active = false
 }
 
 

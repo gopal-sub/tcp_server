@@ -21,7 +21,7 @@ func (s *Server)RemoveClientByServer(client *client.Client){
 	
 	s.RemoveClientFromAllRooms(client)
 	delete(s.Client, client)
-	client.CloseClientByServer()
+	client.DeactivateClient()
 	client.Conn.Close()
 }
 

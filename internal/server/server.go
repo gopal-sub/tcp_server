@@ -95,7 +95,7 @@ func (s *Server) HandleConnection(conn net.Conn){
 			s.RemoveClientFromAllRooms(client)
 			return
 		}
-		if client.CloseByServer{
+		if client.Active{
 			return
 		}
 		if err != nil {
