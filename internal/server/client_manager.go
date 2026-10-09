@@ -45,6 +45,7 @@ func (s *Server) PingClients(TimeoutFrequency time.Duration){
 
 
 	freq := TimeoutFrequency /3
+	fmt.Println(freq)
 
 	ticker := time.NewTicker(freq)
 

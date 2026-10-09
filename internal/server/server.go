@@ -8,8 +8,8 @@ import (
 	"sync"
 	"tcp-chat/internal/client"
 	"tcp-chat/internal/framer"
-	"tcp-chat/internal/protocol"
 	"tcp-chat/internal/room"
+	"tcp-chat/internal/processQueue"
 	"time"
 )
 
@@ -34,7 +34,7 @@ func NewServer(address string) (*Server, error){
 }
 
 func (s *Server) Start() error{
-	TimeoutFrequency := 30*time.Second
+	TimeoutFrequency := 3*time.Minute
 
 	s.CreateGlobalClientList()
 	go s.TimeoutChecker(TimeoutFrequency)
@@ -76,6 +76,7 @@ func (s *Server)Shutdown(){
 
 
 func (s *Server) HandleConnection(conn net.Conn){
+	fmt.Println("handleconn")
 	// for graceful removal of client
 	s.Waitgrp.Add(1)
 	defer s.Waitgrp.Done()
@@ -95,7 +96,7 @@ func (s *Server) HandleConnection(conn net.Conn){
 			s.RemoveClientFromAllRooms(client)
 			return
 		}
-		if client.Active{
+		if !client.Active{
 			return
 		}
 		if err != nil {
@@ -104,82 +105,9 @@ func (s *Server) HandleConnection(conn net.Conn){
 			return
 		}
 		messages := feed.Feed(buffer[:n])
-		for _, message := range messages{
-			command, err := protocol.Parser(message)
-			if err != nil{
-				conn.Write([]byte("invalid command\n"))
-				continue
-			}
-			
-
-			switch command.Type{
-				case protocol.JOIN:
-					
-					// add user to room
-					roomExists := s.GetRoom(command.Arg)
-
-					// case 1 => room does not exist
-					if roomExists == nil{
-					// room does not exist create room and add conn to room
-						newRoom := room.CreateRoom(command.Arg)
-						newRoom.AddClientToRoom(client)
-						s.AddRoomToServer(newRoom)
-						break
-					}
-					// case 2 => client join room the client already is in 
-					if roomExists.DoesClientExistInRoom(client){
-						client.SendMessage("Already in room")
-       					break
-					}
-
-
-					//case 3 => cleint joins new room
-					roomsClientExistsIn := s.RoomsClientExistsIn(client)
-
-					
-					// remove client from any existing room
-					for _, room_val := range roomsClientExistsIn {
-						room_val.RemoveClientFromRoom(client)
-					}
-					roomExists.AddClientToRoom(client)	
-					
-					
-
-
-					
-				case protocol.MESSAGE:
-					roomsClientExistsIn := s.RoomsClientExistsIn(client)
-					if len(roomsClientExistsIn) ==0 {
-						client.SendMessage("You are not in any room")
-						break
-					}
-
-					for _,room := range roomsClientExistsIn{
-						room.BroadcastMessageExceptClient(client, command.Arg)
-					}
-					
-
-				case protocol.QUIT:
-					s.RemoveClientFromAllRooms(client)
-
-				case protocol.PONG:
-					if client.SentPing {
-						client.UpdateLastActivity()
-						client.SentPing = false
-					}
-
-
-
-
-
-				
-			}
-
-
-		}
-		
-
-
+		fmt.Println(messages)
+		// newJob := NewJob(messages, client, s)
+		// newJob.JobProcessor()
 
 	}
 
